@@ -1,7 +1,8 @@
 // Font stacks (defaults)
-#let fontSerif = ("New Computer Modern", "Hiragino Mincho ProN")
-#let fontSan = ("Helvetica", "Hiragino Kaku Gothic ProN")
-#let fontMono = "Menlo"
+// Cross-platform fallback lists: Noto (Linux/any), Yu/Meiryo (Windows), Hiragino (macOS)
+#let fontSerif = ("New Computer Modern", "Noto Serif CJK JP", "Noto Serif JP", "Yu Mincho", "Hiragino Mincho ProN", "MS PMincho")
+#let fontSan = ("Noto Sans CJK JP", "Noto Sans JP", "Yu Gothic", "Meiryo", "Hiragino Kaku Gothic ProN", "MS PGothic")
+#let fontMono = ("DejaVu Sans Mono", "Consolas", "Menlo", "Noto Sans Mono CJK JP")
 
 // Default sizes
 #let systemFontSize = 8pt
@@ -30,21 +31,30 @@
 // Convert datetime → 西暦 string
 #let 西暦date(d) = [#d.year()年#d.month()月#d.day()日]
 
-// Runtime font/date state — updated by 履歴書設定, read via context
-#let _san_font  = state("_san_font",   fontSan)
-#let _mono_font = state("_mono_font",  fontMono)
-#let _doc_date  = state("_doc_date",   datetime.today())
-#let _date_style = state("_date_style", "和暦")  // "和暦" or "西暦"
+// ── 設定 ─────────────────────────────────────────────────────
+// All tunable constants live in one settings dictionary. 履歴書設定
+// overrides entries; block functions read them via context.
+#let _defaults = (
+  serif_font: fontSerif,
+  sans_font: fontSan,
+  mono_font: fontMono,
+  system_size: systemFontSize,  // labels and frame captions
+  name_size: nameFontSize,      // 氏名
+  input_size: inputFontSize,    // user-entered values
+  date: datetime.today(),
+  date_style: "和暦",           // "和暦" or "西暦"
+)
+#let _settings = state("rirekisho-settings", _defaults)
 
-// Internal: render a date using the current style (must be called inside context)
-#let _format_date(d) = if _date_style.get() == "西暦" { 西暦date(d) } else { 和暦date(d) }
+// Internal: render a date in the given style
+#let _format_date(d, style) = if style == "西暦" { 西暦date(d) } else { 和暦date(d) }
 
 // Public: render a date that respects the date_style setting
-#let 日付(d) = context _format_date(d)
+#let 日付(d) = context _format_date(d, _settings.get().date_style)
 
-// Title uses sans font from state
+// Title uses sans font from settings
 #let title = context text(
-  font: _san_font.get(),
+  font: _settings.get().sans_font,
   tracking: 1em,
   size: 14pt,
   weight: "bold",
@@ -56,30 +66,33 @@
 #let _inner = 0.5pt
 #let _dashed = stroke(thickness: 0.5pt, dash: "dashed")
 
-#let email(address) = {
-  set text(font: fontMono)
+// Internal: mailto link with break hints (cfg-aware)
+#let _email(address, cfg) = {
+  set text(font: cfg.mono_font)
   if address != "" {
     link("mailto:" + address)[#address.replace(".", ".\u{200B}").replace("@", "@\u{200B}")]
   }
 }
 
+#let email(address) = context _email(address, _settings.get())
+
 // 年月3列テーブルの共通実装
-#let _年月テーブル(header_title, children) = {
-  set text(size: inputFontSize)
-  let _hi = (x: 0.5 * systemFontSize, y: 1.0 * systemFontSize)
+#let _年月テーブル(header_title, children, cfg) = {
+  set text(size: cfg.input_size)
+  let _hi = (x: 0.5 * cfg.system_size, y: 1.0 * cfg.system_size)
   table(
     columns: (5em, 3em, 1fr),
     stroke: none,
     inset: (x: 0.5em, y: 1em),
     table.header(
       table.cell(stroke: (top: _outer, left: _outer, right: _inner, bottom: _inner), align: center, inset: _hi, text(
-        size: systemFontSize,
+        size: cfg.system_size,
       )[年]),
       table.cell(stroke: (top: _outer, left: none, right: _inner, bottom: _inner), align: center, inset: _hi, text(
-        size: systemFontSize,
+        size: cfg.system_size,
       )[月]),
       table.cell(stroke: (top: _outer, left: none, right: _outer, bottom: _inner), align: center, inset: _hi, text(
-        size: systemFontSize,
+        size: cfg.system_size,
       )[#header_title]),
     ),
     ..children,
@@ -94,33 +107,43 @@
 )
 
 // セクションラベル行（学歴・職歴のみ使用）
-#let _セクションラベル(label) = table.cell(
+#let _セクションラベル(label, cfg) = table.cell(
   colspan: 3,
   stroke: (top: none, left: _outer, right: _outer, bottom: _inner),
   align: center,
-  inset: (x: 0.5 * systemFontSize, y: 1.0 * systemFontSize),
-  text(size: systemFontSize)[#label],
+  inset: (x: 0.5 * cfg.system_size, y: 1.0 * cfg.system_size),
+  text(size: cfg.system_size)[#label],
 )
 
 // ── ドキュメント設定関数 ────────────────────────────────────
-// Usage: #show: 履歴書設定.with(paper: "a4", margin: 1.5cm)
+// Usage: #show: 履歴書設定.with(paper: "a4", margin: 1.5cm, sans_font: "Arial")
 #let 履歴書設定(
   paper: "a4",
   margin: 1.5cm,
-  font: fontSerif,
+  font: fontSerif,       // body (serif) font
   sans_font: fontSan,
   mono_font: fontMono,
-  base_size: 8pt,
-  date: none,
-  date_style: none,  // "和暦" or "西暦"; defaults to "和暦"
+  system_size: systemFontSize,
+  name_size: nameFontSize,
+  input_size: inputFontSize,
+  base_size: none,       // body text size; defaults to system_size
+  date: none,            // datetime; defaults to today
+  date_style: "和暦",    // "和暦" or "西暦"
   body,
 ) = {
   set page(paper: paper, margin: margin)
-  set text(font: font, size: base_size)
-  _san_font.update(sans_font)
-  _mono_font.update(mono_font)
-  if date != none { _doc_date.update(date) }
-  if date_style != none { _date_style.update(date_style) }
+  set text(font: font, size: if base_size == none { system_size } else { base_size })
+  _settings.update(cfg => (
+    ..cfg,
+    serif_font: font,
+    sans_font: sans_font,
+    mono_font: mono_font,
+    system_size: system_size,
+    name_size: name_size,
+    input_size: input_size,
+    date: if date == none { cfg.date } else { date },
+    date_style: date_style,
+  ))
   body
 }
 
@@ -135,9 +158,10 @@
   現住所: (:),
   連絡先: "",
   写真: none,
-) = {
+) = context {
+  let cfg = _settings.get()
   show table: set block(breakable: true)
-  set text(size: systemFontSize)
+  set text(size: cfg.system_size)
 
   let 郵便番号1 = 現住所.at("郵便番号", default: "")
   let 住所1 = 現住所.at("住所", default: "")
@@ -167,13 +191,13 @@
     // ────── 行1: 氏名テーブル ＋ 写真 ──────
     table(
       columns: (5em, 1fr, 1fr),
-      rows: (10mm, 2em, 3 * nameFontSize, 3 * inputFontSize),
+      rows: (10mm, 2em, 3 * cfg.name_size, 3 * cfg.input_size),
       // 合計 4cm で写真高さに合わせる
       stroke: none,
       inset: (x: 4pt, y: 3pt),
       table.cell(colspan: 3, grid(
         columns: (1fr, auto),
-        title, grid.cell(align: bottom + right, context [#_format_date(_doc_date.get())現在]),
+        title, grid.cell(align: bottom + right, [#_format_date(cfg.date, cfg.date_style)現在]),
       )),
       // ふりがな行
       table.cell(stroke: (top: _outer, left: _outer, right: _inner, bottom: _dashed), align: center + horizon)[ふりがな],
@@ -182,15 +206,15 @@
       // 氏名行
       table.cell(stroke: (top: none, left: _outer, right: _inner, bottom: _inner), align: center + horizon)[氏#h(1em)名],
       table.cell(stroke: (top: none, left: none, right: none, bottom: _inner), align: center + horizon)[
-        #text(nameFontSize, 姓)
+        #text(cfg.name_size, 姓)
       ],
       table.cell(stroke: (top: none, left: none, right: _outer, bottom: _inner), align: start + horizon)[
-        #text(nameFontSize, 名)
+        #text(cfg.name_size, 名)
       ],
       // 生年月日行
       table.cell(stroke: (top: none, left: _outer, right: _inner, bottom: _inner), align: center + horizon)[生年月日],
       table.cell(colspan: 2, stroke: (top: none, left: none, right: _outer, bottom: _inner), align: horizon)[
-        #h(2em)#text(inputFontSize, 生年月日) 生 #h(3em) (満 #h(0.5em) #年齢 歳)
+        #h(2em)#text(cfg.input_size, 生年月日) 生 #h(3em) (満 #h(0.5em) #年齢 歳)
       ],
     ),
     align(center + horizon,
@@ -208,17 +232,17 @@
 
     // ────── 行3: 住所 ＋ 電話・メール ──────
     table(
-      columns: (4 * inputFontSize, 1fr),
-      rows: (2em, 1em, 3 * inputFontSize),
+      columns: (4 * cfg.input_size, 1fr),
+      rows: (2em, 1em, 3 * cfg.input_size),
       inset: (x: 4pt, y: 2pt),
       stroke: none,
       table.cell(stroke: (top: none, left: _outer, right: _inner, bottom: _dashed), align: center + horizon)[ふりがな],
       table.cell(stroke: (top: none, left: none, right: _inner, bottom: _dashed), align: center + horizon)[#かな1],
       table.cell(colspan: 2, stroke: (top: none, left: _outer, right: _inner, bottom: none), {
-        pad(x: 0em, y: 0.5em, {if 郵便番号1 == "" { [現住所 (〒 #text(font: fontMono)[#box(width: 1.8em) - #h(2.4em)])] } else { [現住所 (〒 #text(font: fontMono, 郵便番号1))] }})
+        pad(x: 0em, y: 0.5em, {if 郵便番号1 == "" { [現住所 (〒 #text(font: cfg.mono_font)[#box(width: 1.8em) - #h(2.4em)])] } else { [現住所 (〒 #text(font: cfg.mono_font, 郵便番号1))] }})
       }),
       table.cell(stroke: (top: none, left: _outer, right: none, bottom: _inner))[],
-      table.cell(stroke: (top: none, left: none, right: _inner, bottom: _inner), align: center + horizon, text(size: inputFontSize, 住所1)),
+      table.cell(stroke: (top: none, left: none, right: _inner, bottom: _inner), align: center + horizon, text(size: cfg.input_size, 住所1)),
     ),
 
     stack(
@@ -227,33 +251,33 @@
         rows: 2em,
         stroke: none,
         inset: (x: 4pt, y: 3pt),
-        table.cell(stroke: (top: _outer, left: none, right: _outer, bottom: _inner), align: horizon)[電話 #h(2em) #text(font: fontMono, 電話1)],
+        table.cell(stroke: (top: _outer, left: none, right: _outer, bottom: _inner), align: horizon)[電話 #h(2em) #text(font: cfg.mono_font, 電話1)],
       ),
       table(
         columns: (1fr,),
-        rows: (1em + 3 * inputFontSize,),
+        rows: (1em + 3 * cfg.input_size,),
         stroke: none,
         inset: (x: 4pt, y: 3pt),
         table.cell(stroke: (top: none, left: none, right: _outer, bottom: _inner), {
           pad(x: 0em, y: 0em)[E-mail]
-          context text(font: _mono_font.get(), size: 8pt, email(メール1))
+          text(font: cfg.mono_font, size: cfg.system_size, _email(メール1, cfg))
         }),
       ),
     ),
 
     // ────── 行4: 連絡先 ＋ 連絡先電話・メール ──────
     table(
-      columns: (4 * inputFontSize, 1fr),
-      rows: (2em, 1em, 3 * inputFontSize),
+      columns: (4 * cfg.input_size, 1fr),
+      rows: (2em, 1em, 3 * cfg.input_size),
       inset: (x: 4pt, y: 2pt),
       stroke: none,
       table.cell(stroke: (top: none, left: _outer, right: _inner, bottom: _dashed), align: center + horizon)[ふりがな],
       table.cell(stroke: (top: none, left: none, right: _inner, bottom: _dashed), align: center + horizon)[#かな2],
       table.cell(colspan: 2, stroke: (top: none, left: _outer, right: _inner, bottom: none), {
-        pad(x: 0em, y: 0.5em, {if 郵便番号2 == "" { [連絡先 (〒 #text(font: fontMono)[#box(width: 1.8em)-#h(2.4em)])] } else { [連絡先 (〒 #text(font: fontMono, 郵便番号2))] }})
+        pad(x: 0em, y: 0.5em, {if 郵便番号2 == "" { [連絡先 (〒 #text(font: cfg.mono_font)[#box(width: 1.8em)-#h(2.4em)])] } else { [連絡先 (〒 #text(font: cfg.mono_font, 郵便番号2))] }})
       }),
       table.cell(stroke: (top: none, left: _outer, right: none, bottom: _outer))[],
-      table.cell(stroke: (top: none, left: none, right: _inner, bottom: _outer), align: center + horizon, text(size: inputFontSize, 住所2)),
+      table.cell(stroke: (top: none, left: none, right: _inner, bottom: _outer), align: center + horizon, text(size: cfg.input_size, 住所2)),
     ),
 
     stack(
@@ -262,16 +286,16 @@
         rows: 2em,
         stroke: none,
         inset: (x: 4pt, y: 3pt),
-        table.cell(stroke: (top: _inner, left: none, right: _outer, bottom: _inner), align: horizon)[電話 #h(2em) #text(font: fontMono, 電話2)],
+        table.cell(stroke: (top: _inner, left: none, right: _outer, bottom: _inner), align: horizon)[電話 #h(2em) #text(font: cfg.mono_font, 電話2)],
       ),
       table(
         columns: (1fr,),
-        rows: (1em + 3 * inputFontSize,),
+        rows: (1em + 3 * cfg.input_size,),
         stroke: none,
         inset: (x: 4pt, y: 3pt),
         table.cell(stroke: (top: none, left: none, right: _outer, bottom: _outer), {
           pad(x: 0em, y: 0em)[E-mail]
-          context text(font: _mono_font.get(), size: 8pt, email(メール2))
+          text(font: cfg.mono_font, size: cfg.system_size, _email(メール2, cfg))
         }),
       ),
     ),
@@ -279,7 +303,8 @@
 }
 
 // ── 学歴・職歴ブロック ────────────────────────────────────────
-#let 学歴職歴(学歴: (), 職歴: ()) = {
+#let 学歴職歴(学歴: (), 職歴: ()) = context {
+  let cfg = _settings.get()
   show table: set block(breakable: true)
   let _map(arr, last_bottom: _outer) = arr.enumerate().map(pair => {
     let (i, e) = pair
@@ -292,16 +317,18 @@
   _年月テーブル(
     [学歴・職歴（各別にまとめて書く）],
     (
-      _セクションラベル([学歴]),
+      _セクションラベル([学歴], cfg),
       .._map(学歴, last_bottom: _inner),
-      _セクションラベル([職歴]),
+      _セクションラベル([職歴], cfg),
       .._map(職歴),
     ),
+    cfg,
   )
 }
 
 // ── 資格欄ブロック ────────────────────────────────────────────
-#let 資格欄(資格: ()) = {
+#let 資格欄(資格: ()) = context {
+  let cfg = _settings.get()
   _年月テーブル(
     [免許・資格],
     資格.enumerate().map(pair => {
@@ -312,20 +339,22 @@
         bottom: if i == 資格.len() - 1 { _outer } else { _inner },
       )
     }).flatten(),
+    cfg,
   )
 }
 
 // ── 志望動機ブロック ─────────────────────────────────────────
-#let 志望動機(height: 5cm, body) = {
+#let 志望動機(height: 5cm, body) = context {
+  let cfg = _settings.get()
   table(
     columns: (1fr,),
     rows: (height,),
     stroke: none,
     inset: (x: 5pt, y: 5pt),
     table.cell(stroke: (top: _outer, left: _outer, right: _outer, bottom: _outer), align: top)[
-      #text(size: systemFontSize)[志望の動機、特技、好きな学科、アピールポイントなど]
+      #text(size: cfg.system_size)[志望の動機、特技、好きな学科、アピールポイントなど]
       #linebreak()
-      #set text(size: inputFontSize)
+      #set text(size: cfg.input_size)
       #set par(first-line-indent: 1em)
       #v(0.75em, weak: true)
       #body
@@ -334,16 +363,17 @@
 }
 
 // ── 本人希望ブロック ─────────────────────────────────────────
-#let 本人希望(height: 5cm, body) = {
+#let 本人希望(height: 5cm, body) = context {
+  let cfg = _settings.get()
   table(
     columns: (1fr,),
     rows: (height,),
     stroke: none,
     inset: (x: 5pt, y: 5pt),
     table.cell(stroke: (top: _outer, left: _outer, right: _outer, bottom: _outer), align: top)[
-      #text(size: systemFontSize)[本人希望記入欄（特に給料・職種・勤務時間・勤務地・その他についての希望があれば記入）]
+      #text(size: cfg.system_size)[本人希望記入欄（特に給料・職種・勤務時間・勤務地・その他についての希望があれば記入）]
       #linebreak()
-      #set text(size: inputFontSize)
+      #set text(size: cfg.input_size)
       #set par(first-line-indent: 1em)
       #v(0.75em, weak: true)
       #body
@@ -352,7 +382,8 @@
 }
 
 // ── 賞罰ブロック ─────────────────────────────────────────────
-#let 賞罰(エントリー: ()) = {
+#let 賞罰(エントリー: ()) = context {
+  let cfg = _settings.get()
   _年月テーブル(
     [賞罰・処分歴等],
     エントリー.enumerate().map(pair => {
@@ -363,12 +394,14 @@
         bottom: if i == エントリー.len() - 1 { _outer } else { _inner },
       )
     }).flatten(),
+    cfg,
   )
 }
 
 // ── 署名欄ブロック ───────────────────────────────────────────
-#let 署名欄(signature: none) = {
-  set text(size: inputFontSize)
+#let 署名欄(signature: none) = context {
+  let cfg = _settings.get()
+  set text(size: cfg.input_size)
   table(
     columns: (1fr,),
     stroke: none,
@@ -376,13 +409,12 @@
     table.cell(stroke: (top: _outer, left: _outer, right: _outer, bottom: _outer), align: top)[
       本書類の記載内容については事実に相違なく、虚偽の記載があった場合には、採用取消や懲戒処分等の対象となりえることについて了承します。
       #v(0.5em)
-      #context align(end, {
-        let today = _doc_date.get()
+      #align(end, {
         grid(
           columns: (auto, 0.5em, auto, 2em),
           align: left + horizon,
           row-gutter: 1em,
-          grid.cell(colspan: 3)[#_format_date(today)], [],
+          grid.cell(colspan: 3)[#_format_date(cfg.date, cfg.date_style)], [],
           [氏名（自署）],
           [],
           if signature != none { box(signature) } else { h(5cm) },

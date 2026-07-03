@@ -4,6 +4,14 @@
   paper: "a4",
   margin: 2.0cm,
   date: datetime(year: 1950, month: 3, day: 1),
+  date_style: "和暦",        // or "西暦"
+  // Fonts and sizes are also configurable here. Defaults shown below:
+  // font: fontSerif,        // body (serif) font
+  // sans_font: fontSan,     // title
+  // mono_font: fontMono,    // postal code, phone, e-mail
+  // system_size: 8pt,       // labels and frame captions
+  // name_size: 16pt,        // name
+  // input_size: 10pt,       // user-entered values
 )
 
 #set page(numbering: none)

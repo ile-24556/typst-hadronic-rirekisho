@@ -9,6 +9,7 @@ typst-rirekisho/
 ├── rirekisho.typ        # テンプレート本体
 └── example/
     ├── example.typ      # 記入例（湯川秀樹）
+    ├── example.pdf      # 記入例の出力
     ├── photo.jpg        # 証明写真（各自用意）
     └── signature.png    # 署名画像（各自用意）
 ```
@@ -17,16 +18,29 @@ typst-rirekisho/
 
 ## 設定（`履歴書設定`）
 
-| パラメータ | 型 | デフォルト | 説明 |
-|---|---|---|---|
-| `paper` | `str` | `"a4"` | 用紙サイズ |
-| `margin` | `length` | `1.5cm` | ページ余白 |
-| `font` | `array` | 明朝体 | 本文フォント |
-| `sans_font` | `array` | ゴシック体 | 見出し用フォント |
-| `mono_font` | `str` | `"Menlo"` | 等幅フォント |
-| `base_size` | `length` | `8pt` | 基本文字サイズ |
-| `date` | `datetime` | 今日 | 履歴書の作成日 |
-| `date_style` | `str` | `"和暦"` | 日付表示形式（`"和暦"` または `"西暦"`） |
+フォントや文字サイズなどの定数はすべて `履歴書設定` で一括指定でき、各ブロックに反映される。
+
+```typst
+#show: 履歴書設定.with(
+  margin: 2.0cm,
+  date: datetime(year: 1950, month: 3, day: 1),
+  date_style: "和暦",
+)
+```
+
+| パラメータ    | 型         | デフォルト             | 説明                                     |
+|---------------|------------|------------------------|------------------------------------------|
+| `paper`       | `str`      | `"a4"`                 | 用紙サイズ                               |
+| `margin`      | `length`   | `1.5cm`                | ページ余白                               |
+| `font`        | `array`    | 明朝体 (`fontSerif`)   | 本文フォント                             |
+| `sans_font`   | `array`    | ゴシック体 (`fontSan`) | 見出し用フォント                         |
+| `mono_font`   | `array`    | 等幅 (`fontMono`)      | 郵便番号・電話・メール用フォント         |
+| `system_size` | `length`   | `8pt`                  | ラベル・枠見出しの文字サイズ             |
+| `name_size`   | `length`   | `16pt`                 | 氏名の文字サイズ                         |
+| `input_size`  | `length`   | `10pt`                 | 記入値の文字サイズ                       |
+| `base_size`   | `length`   | `system_size`          | 本文の基本文字サイズ                     |
+| `date`        | `datetime` | 今日                   | 履歴書の作成日                           |
+| `date_style`  | `str`      | `"和暦"`               | 日付表示形式（`"和暦"` または `"西暦"`） |
 
 ---
 
@@ -120,12 +134,20 @@ typst-rirekisho/
 
 ## フォントについて
 
-デフォルトフォントは macOS 標準の日本語フォントを想定している。
+デフォルトフォントはクロスプラットフォームなフォールバックリストになっており、Linux (Noto)・Windows (游書体・Meiryo・MS 書体)・macOS (ヒラギノ) のいずれでもそのまま使える。
 
-| 用途 | フォント |
-|---|---|
-| 本文（明朝） | New Computer Modern / ヒラギノ明朝 ProN |
-| 見出し（ゴシック） | Helvetica / ヒラギノ角ゴ ProN |
-| 等幅 | Menlo |
+| 用途               | フォールバック順                                                                                |
+|--------------------|-------------------------------------------------------------------------------------------------|
+| 本文（明朝）       | New Computer Modern → Noto Serif CJK JP → Noto Serif JP → 游明朝 → ヒラギノ明朝 ProN → MS P明朝 |
+| 見出し（ゴシック） | Noto Sans CJK JP → Noto Sans JP → 游ゴシック → Meiryo → ヒラギノ角ゴ ProN → MS Pゴシック        |
+| 等幅               | DejaVu Sans Mono → Consolas → Menlo → Noto Sans Mono CJK JP                                     |
 
-`履歴書設定` の `font`・`sans_font`・`mono_font` パラメータで変更できる。
+New Computer Modern と DejaVu Sans Mono は Typst 本体に同梱されているため、どの環境でも利用できる。コンパイル時に `unknown font family` の警告が出ることがあるが、これは環境にないフォールバック候補に対するもので、いずれかのフォントが見つかれば出力に問題はない。
+
+フォントを固定したい場合は `履歴書設定` の `font`・`sans_font`・`mono_font` パラメータで指定する。
+
+---
+
+## 謝辞
+
+このテンプレートは [Nikudanngo/typst-ja-resume-template](https://github.com/Nikudanngo/typst-ja-resume-template) を参考にして作成した。
