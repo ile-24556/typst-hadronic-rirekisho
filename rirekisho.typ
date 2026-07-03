@@ -1,23 +1,8 @@
-// Font stacks (defaults)
-// Latin glyphs are covered by dedicated Latin fonts; everything else falls
-// through to the CJK fonts (Noto for Linux, Yu/Meiryo/MS for Windows,
-// Hiragino for macOS). Same coverage range as okumuralab/typst-js:
-// "latin-in-cjk" would leave some punctuation to the CJK font.
-#let latinCovers = regex("[\u{0}-\u{2023}]")
-#let fontSerif = (
-  (name: "New Computer Modern", covers: latinCovers),
-  "Noto Serif CJK JP", "Noto Serif JP", "Yu Mincho", "Hiragino Mincho ProN", "MS PMincho",
-)
-#let fontSan = (
-  (name: "Helvetica", covers: latinCovers),
-  (name: "Arial", covers: latinCovers),
-  (name: "Liberation Sans", covers: latinCovers),
-  "Noto Sans CJK JP", "Noto Sans JP", "Yu Gothic", "Meiryo", "Hiragino Kaku Gothic ProN", "MS PGothic",
-)
-#let fontMono = (
-  (name: "DejaVu Sans Mono", covers: latinCovers),
-  "Noto Sans Mono CJK JP", "Noto Sans CJK JP", "Yu Gothic", "Meiryo", "Hiragino Kaku Gothic ProN", "MS PGothic",
-)
+// Default fonts (Harano Aji ships with TeX Live; see README)
+#let latinCovers = regex("[\u{0}-\u{2023}]")  // glyph range drawn by the Latin font
+#let fontSerif = ((name: "New Computer Modern", covers: latinCovers), "Harano Aji Mincho")
+#let fontSan = "Harano Aji Gothic"
+#let fontMono = "DejaVu Sans Mono"
 
 // Default sizes
 #let systemFontSize = 8pt
@@ -47,8 +32,6 @@
 #let 西暦date(d) = [#d.year()年#d.month()月#d.day()日]
 
 // ── 設定 ─────────────────────────────────────────────────────
-// All tunable constants live in one settings dictionary. 履歴書設定
-// overrides entries; block functions read them via context.
 #let _defaults = (
   serif_font: fontSerif,
   sans_font: fontSan,
@@ -61,13 +44,11 @@
 )
 #let _settings = state("rirekisho-settings", _defaults)
 
-// Internal: render a date in the given style
 #let _format_date(d, style) = if style == "西暦" { 西暦date(d) } else { 和暦date(d) }
 
-// Public: render a date that respects the date_style setting
+// Render a date following the date_style setting
 #let 日付(d) = context _format_date(d, _settings.get().date_style)
 
-// Title uses sans font from settings
 #let title = context text(
   font: _settings.get().sans_font,
   tracking: 1em,
@@ -81,14 +62,13 @@
 #let _inner = 0.5pt
 #let _dashed = stroke(thickness: 0.5pt, dash: "dashed")
 
-// 均等割付: spread the characters of s evenly across the given width
-// (after okumuralab/typst-js). Accepts a string or text content.
+// 均等割付
 #let kintou(width, s) = {
   let t = if type(s) == str { s } else { s.text }
   box(width: width, t.clusters().join(h(1fr)))
 }
 
-// Internal: mailto link with break hints (cfg-aware)
+// mailto link with break hints
 #let _email(address, cfg) = {
   set text(font: cfg.mono_font)
   if address != "" {

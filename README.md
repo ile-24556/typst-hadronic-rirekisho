@@ -136,17 +136,30 @@ typst-rirekisho/
 
 ## フォントについて
 
-デフォルトフォントは和欧混植を前提としたクロスプラットフォーム構成になっている。欧文グリフ（`covers: regex("[\u{0}-\u{2023}]")` の範囲）は専用の欧文フォントが担当し、和文は CJK フォントのフォールバックリスト（Linux: Noto、Windows: 游書体・Meiryo・MS 書体、macOS: ヒラギノ）に流れる。
+デフォルトフォントは [okumuralab/typst-js](https://github.com/okumuralab/typst-js) にならい、役割ごとに 1 書体を指定している。
 
-| 用途               | 欧文                                | 和文フォールバック順                                                     |
-|--------------------|-------------------------------------|--------------------------------------------------------------------------|
-| 本文（明朝）       | New Computer Modern                 | Noto Serif CJK JP → Noto Serif JP → 游明朝 → ヒラギノ明朝 ProN → MS P明朝 |
-| 見出し（ゴシック） | Helvetica → Arial → Liberation Sans | Noto Sans CJK JP → Noto Sans JP → 游ゴシック → Meiryo → ヒラギノ角ゴ ProN → MS Pゴシック |
-| 等幅               | DejaVu Sans Mono                    | Noto Sans Mono CJK JP → 上記ゴシック                                     |
+| 用途               | フォント                                        |
+|--------------------|-------------------------------------------------|
+| 本文（明朝）       | 欧文: New Computer Modern、和文: 原ノ味明朝     |
+| 見出し（ゴシック） | 原ノ味角ゴシック                                |
+| 等幅               | DejaVu Sans Mono                                |
 
-New Computer Modern と DejaVu Sans Mono は Typst 本体に同梱されているため、欧文はどの環境でも同じ見た目になる。コンパイル時に `unknown font family` の警告が出ることがあるが、これは環境にないフォールバック候補に対するもので、いずれかのフォントが見つかれば出力に問題はない。
+New Computer Modern と DejaVu Sans Mono は Typst 本体に同梱されている。原ノ味フォントは TeX Live に同梱されているので、Typst が見つけられない場合はフォント検索パスに加えればよい:
 
-フォントを固定したい場合は `履歴書設定` の `font`・`sans_font`・`mono_font` パラメータで指定する。
+```sh
+export TYPST_FONT_PATHS=/usr/local/texlive/2026/texmf-dist/fonts/opentype
+```
+
+TeX Live がない場合は [原ノ味フォントを直接インストール](https://github.com/trueroad/HaranoAjiFonts)するか、`履歴書設定` の `font`・`sans_font`・`mono_font` パラメータで手元のフォント（ヒラギノ、游書体、Noto など）を指定する。
+
+```typst
+#show: 履歴書設定.with(
+  font: ((name: "New Computer Modern", covers: latinCovers), "Hiragino Mincho ProN"),
+  sans_font: "Hiragino Kaku Gothic ProN",
+)
+```
+
+本文フォントのように `(欧文フォント, 和文フォント)` を組にする場合は、上の例のように `covers` で欧文の受け持ち範囲を指定する（`latinCovers` はテンプレートが公開している定数）。
 
 ---
 
