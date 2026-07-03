@@ -1,8 +1,23 @@
 // Font stacks (defaults)
-// Cross-platform fallback lists: Noto (Linux/any), Yu/Meiryo (Windows), Hiragino (macOS)
-#let fontSerif = ("New Computer Modern", "Noto Serif CJK JP", "Noto Serif JP", "Yu Mincho", "Hiragino Mincho ProN", "MS PMincho")
-#let fontSan = ("Noto Sans CJK JP", "Noto Sans JP", "Yu Gothic", "Meiryo", "Hiragino Kaku Gothic ProN", "MS PGothic")
-#let fontMono = ("DejaVu Sans Mono", "Consolas", "Menlo", "Noto Sans Mono CJK JP")
+// Latin glyphs are covered by dedicated Latin fonts; everything else falls
+// through to the CJK fonts (Noto for Linux, Yu/Meiryo/MS for Windows,
+// Hiragino for macOS). Same coverage range as okumuralab/typst-js:
+// "latin-in-cjk" would leave some punctuation to the CJK font.
+#let latinCovers = regex("[\u{0}-\u{2023}]")
+#let fontSerif = (
+  (name: "New Computer Modern", covers: latinCovers),
+  "Noto Serif CJK JP", "Noto Serif JP", "Yu Mincho", "Hiragino Mincho ProN", "MS PMincho",
+)
+#let fontSan = (
+  (name: "Helvetica", covers: latinCovers),
+  (name: "Arial", covers: latinCovers),
+  (name: "Liberation Sans", covers: latinCovers),
+  "Noto Sans CJK JP", "Noto Sans JP", "Yu Gothic", "Meiryo", "Hiragino Kaku Gothic ProN", "MS PGothic",
+)
+#let fontMono = (
+  (name: "DejaVu Sans Mono", covers: latinCovers),
+  "Noto Sans Mono CJK JP", "Noto Sans CJK JP", "Yu Gothic", "Meiryo", "Hiragino Kaku Gothic ProN", "MS PGothic",
+)
 
 // Default sizes
 #let systemFontSize = 8pt
@@ -66,6 +81,13 @@
 #let _inner = 0.5pt
 #let _dashed = stroke(thickness: 0.5pt, dash: "dashed")
 
+// 均等割付: spread the characters of s evenly across the given width
+// (after okumuralab/typst-js). Accepts a string or text content.
+#let kintou(width, s) = {
+  let t = if type(s) == str { s } else { s.text }
+  box(width: width, t.clusters().join(h(1fr)))
+}
+
 // Internal: mailto link with break hints (cfg-aware)
 #let _email(address, cfg) = {
   set text(font: cfg.mono_font)
@@ -118,6 +140,7 @@
 // ── ドキュメント設定関数 ────────────────────────────────────
 // Usage: #show: 履歴書設定.with(paper: "a4", margin: 1.5cm, sans_font: "Arial")
 #let 履歴書設定(
+  lang: "ja",
   paper: "a4",
   margin: 1.5cm,
   font: fontSerif,       // body (serif) font
@@ -132,7 +155,7 @@
   body,
 ) = {
   set page(paper: paper, margin: margin)
-  set text(font: font, size: if base_size == none { system_size } else { base_size })
+  set text(lang: lang, font: font, size: if base_size == none { system_size } else { base_size })
   _settings.update(cfg => (
     ..cfg,
     serif_font: font,
@@ -204,7 +227,7 @@
       table.cell(stroke: (top: _outer, left: none, right: none, bottom: _dashed), align: center + horizon)[#姓読み],
       table.cell(stroke: (top: _outer, left: none, right: _outer, bottom: _dashed), align: start + horizon)[#名読み],
       // 氏名行
-      table.cell(stroke: (top: none, left: _outer, right: _inner, bottom: _inner), align: center + horizon)[氏#h(1em)名],
+      table.cell(stroke: (top: none, left: _outer, right: _inner, bottom: _inner), align: center + horizon, kintou(4em, "氏名")),
       table.cell(stroke: (top: none, left: none, right: none, bottom: _inner), align: center + horizon)[
         #text(cfg.name_size, 姓)
       ],
@@ -355,7 +378,7 @@
       #text(size: cfg.system_size)[志望の動機、特技、好きな学科、アピールポイントなど]
       #linebreak()
       #set text(size: cfg.input_size)
-      #set par(first-line-indent: 1em)
+      #set par(first-line-indent: (amount: 1em, all: true), justify: true)
       #v(0.75em, weak: true)
       #body
     ],
@@ -374,7 +397,7 @@
       #text(size: cfg.system_size)[本人希望記入欄（特に給料・職種・勤務時間・勤務地・その他についての希望があれば記入）]
       #linebreak()
       #set text(size: cfg.input_size)
-      #set par(first-line-indent: 1em)
+      #set par(first-line-indent: (amount: 1em, all: true), justify: true)
       #v(0.75em, weak: true)
       #body
     ],
@@ -402,6 +425,7 @@
 #let 署名欄(signature: none) = context {
   let cfg = _settings.get()
   set text(size: cfg.input_size)
+  set par(justify: true)
   table(
     columns: (1fr,),
     stroke: none,

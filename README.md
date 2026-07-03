@@ -30,6 +30,7 @@ typst-rirekisho/
 
 | パラメータ    | 型         | デフォルト             | 説明                                     |
 |---------------|------------|------------------------|------------------------------------------|
+| `lang`        | `str`      | `"ja"`                 | 文書言語（禁則処理・グリフ選択に影響）  |
 | `paper`       | `str`      | `"a4"`                 | 用紙サイズ                               |
 | `margin`      | `length`   | `1.5cm`                | ページ余白                               |
 | `font`        | `array`    | 明朝体 (`fontSerif`)   | 本文フォント                             |
@@ -111,15 +112,16 @@ typst-rirekisho/
 
 ---
 
-## 日付ユーティリティ
+## ユーティリティ
 
-テンプレートには日付変換関数が含まれており、本文中でも使用できる。
+テンプレートには以下の関数が含まれており、本文中でも使用できる。
 
 | 関数 | 説明 |
 |---|---|
 | `和暦date(d)` | `datetime` → 和暦文字列（明治〜令和、それ以前は西暦） |
 | `西暦date(d)` | `datetime` → 西暦文字列 |
 | `日付(d)` | `date_style` 設定に従いどちらかで表示 |
+| `kintou(width, s)` | 文字列 `s` を幅 `width` に均等割付（例: `kintou(4em, "氏名")`） |
 
 ```typst
 // 和暦モード（デフォルト）
@@ -134,15 +136,15 @@ typst-rirekisho/
 
 ## フォントについて
 
-デフォルトフォントはクロスプラットフォームなフォールバックリストになっており、Linux (Noto)・Windows (游書体・Meiryo・MS 書体)・macOS (ヒラギノ) のいずれでもそのまま使える。
+デフォルトフォントは和欧混植を前提としたクロスプラットフォーム構成になっている。欧文グリフ（`covers: regex("[\u{0}-\u{2023}]")` の範囲）は専用の欧文フォントが担当し、和文は CJK フォントのフォールバックリスト（Linux: Noto、Windows: 游書体・Meiryo・MS 書体、macOS: ヒラギノ）に流れる。
 
-| 用途               | フォールバック順                                                                                |
-|--------------------|-------------------------------------------------------------------------------------------------|
-| 本文（明朝）       | New Computer Modern → Noto Serif CJK JP → Noto Serif JP → 游明朝 → ヒラギノ明朝 ProN → MS P明朝 |
-| 見出し（ゴシック） | Noto Sans CJK JP → Noto Sans JP → 游ゴシック → Meiryo → ヒラギノ角ゴ ProN → MS Pゴシック        |
-| 等幅               | DejaVu Sans Mono → Consolas → Menlo → Noto Sans Mono CJK JP                                     |
+| 用途               | 欧文                                | 和文フォールバック順                                                     |
+|--------------------|-------------------------------------|--------------------------------------------------------------------------|
+| 本文（明朝）       | New Computer Modern                 | Noto Serif CJK JP → Noto Serif JP → 游明朝 → ヒラギノ明朝 ProN → MS P明朝 |
+| 見出し（ゴシック） | Helvetica → Arial → Liberation Sans | Noto Sans CJK JP → Noto Sans JP → 游ゴシック → Meiryo → ヒラギノ角ゴ ProN → MS Pゴシック |
+| 等幅               | DejaVu Sans Mono                    | Noto Sans Mono CJK JP → 上記ゴシック                                     |
 
-New Computer Modern と DejaVu Sans Mono は Typst 本体に同梱されているため、どの環境でも利用できる。コンパイル時に `unknown font family` の警告が出ることがあるが、これは環境にないフォールバック候補に対するもので、いずれかのフォントが見つかれば出力に問題はない。
+New Computer Modern と DejaVu Sans Mono は Typst 本体に同梱されているため、欧文はどの環境でも同じ見た目になる。コンパイル時に `unknown font family` の警告が出ることがあるが、これは環境にないフォールバック候補に対するもので、いずれかのフォントが見つかれば出力に問題はない。
 
 フォントを固定したい場合は `履歴書設定` の `font`・`sans_font`・`mono_font` パラメータで指定する。
 
@@ -150,4 +152,7 @@ New Computer Modern と DejaVu Sans Mono は Typst 本体に同梱されてい�
 
 ## 謝辞
 
-このテンプレートは [Nikudanngo/typst-ja-resume-template](https://github.com/Nikudanngo/typst-ja-resume-template) を参考にして作成した。
+このテンプレートは以下のプロジェクトを参考にして作成した。
+
+- [Nikudanngo/typst-ja-resume-template](https://github.com/Nikudanngo/typst-ja-resume-template)
+- [okumuralab/typst-js](https://github.com/okumuralab/typst-js) — 和欧混植（`covers`）、均等割付（`kintou`）、和文組版の設定
