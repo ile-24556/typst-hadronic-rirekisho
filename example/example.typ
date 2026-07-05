@@ -6,7 +6,7 @@
   date: datetime(year: 1950, month: 3, day: 1),
   date_style: "和暦",        // or "西暦"
   // macOS fonts (defaults: Harano Aji from TeX Live)
-  font: ((name: "New Computer Modern", covers: latinCovers), "Hiragino Mincho ProN"),
+  font: ((name: "New Computer Modern", covers: latin-covers), "Hiragino Mincho ProN"),
   sans_font: "Hiragino Kaku Gothic ProN",
   mono_font: "Menlo",
   // Sizes are also configurable. Defaults:
