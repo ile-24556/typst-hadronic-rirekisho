@@ -1,4 +1,4 @@
-# typst-rirekisho
+# typst-hadronic-rirekisho
 
 [Typst](https://typst.app/) で書く日本語履歴書テンプレートです。[Typst Universe](https://typst.app/universe/) パッケージとして配布予定です（`@preview/hadronic-rirekisho`）。
 
@@ -19,7 +19,7 @@ typst init @preview/hadronic-rirekisho:0.1.0
 ## ファイル構成
 
 ```
-typst-rirekisho/
+typst-hadronic-rirekisho/
 ├── typst.toml         # パッケージマニフェスト
 ├── rirekisho.typ      # テンプレート本体（パッケージのエントリーポイント）
 ├── LICENSE
