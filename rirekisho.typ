@@ -358,7 +358,7 @@
       #text(size: cfg.system_size)[志望の動機、特技、好きな学科、アピールポイントなど]
       #linebreak()
       #set text(size: cfg.input_size)
-      #set par(first-line-indent: (amount: 1em, all: true), justify: true)
+      #set par(spacing: 0.65em, first-line-indent: (amount: 1em, all: true), justify: true)
       #v(0.75em, weak: true)
       #body
     ],
@@ -377,7 +377,7 @@
       #text(size: cfg.system_size)[本人希望記入欄（特に給料・職種・勤務時間・勤務地・その他についての希望があれば記入）]
       #linebreak()
       #set text(size: cfg.input_size)
-      #set par(first-line-indent: (amount: 1em, all: true), justify: true)
+      #set par(spacing: 0.65em, first-line-indent: (amount: 1em, all: true), justify: true)
       #v(0.75em, weak: true)
       #body
     ],
