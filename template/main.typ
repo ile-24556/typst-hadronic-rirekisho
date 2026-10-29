@@ -1,4 +1,4 @@
-#import "@preview/hadronic-rirekisho:0.1.0": *
+#import "@preview/hadronic-rirekisho:0.1.1": *
 
 #show: 履歴書設定.with(
   paper: "a4",

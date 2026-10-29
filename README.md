@@ -7,13 +7,13 @@
 新規プロジェクトをテンプレートから作成します:
 
 ```sh
-typst init @preview/hadronic-rirekisho:0.1.0
+typst init @preview/hadronic-rirekisho:0.1.1
 ```
 
 または既存プロジェクトから直接インポートします:
 
 ```typst
-#import "@preview/hadronic-rirekisho:0.1.0": *
+#import "@preview/hadronic-rirekisho:0.1.1": *
 ```
 
 記入例（湯川秀樹）のソースと出力は [`example/example.typ`](example/example.typ) と [`example/example.pdf`](example/example.pdf) にあります。
